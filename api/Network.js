@@ -1,76 +1,80 @@
-import { AsyncStorage } from 'react-native';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 export class Network {
-	constructor() {
-		this.jwt = '';
-	}
+  constructor() {
+    this.jwt = "";
+  }
 
-	static async fetch(url, init, addAuth) {
-		this.jwt = await AsyncStorage.getItem('token');
+  static async fetch(url, init, addAuth) {
+    this.jwt = await AsyncStorage.getItem("token");
+    console.log(url, init, this.jwt);
 
-		console.log(url, init);
-		const response = await fetch(url, {
-			mode: 'cors',
-			...init,
-			headers: Network.getHeaders(init.headers, addAuth),
-		});
-		let promise;
-		if (response.status !== 200 && response.status !== 201) {
-			promise = Network.handleErrorsBasedOnStatus(response);
-		} else {
-			promise = response.json();
-		}
-		return promise;
-	}
+    const response = await fetch(url, {
+      mode: "cors",
+      ...init,
+      headers: Network.getHeaders(init.headers, addAuth),
+    });
+    let promise;
 
-	static getHeaders(originalHeaders, addAuth) {
-		let headers = {
-			'content-type': 'application/json',
-			accept: 'application/json',
-		};
+    if (response.status !== 200 && response.status !== 201) {
+      promise = Network.handleErrorsBasedOnStatus(response);
+    } else {
+      promise = response.json();
+    }
+    return promise;
+  }
 
-		if (addAuth) {
-			headers.Authorization = `token ${this.jwt}`;
-		}
+  static getHeaders(originalHeaders, addAuth) {
+    let headers = {
+      "content-type": "application/json",
+      accept: "application/json",
+    };
 
-		headers = {
-			...headers,
-			...originalHeaders,
-		};
+    if (addAuth) {
+      headers.Authorization = `token ${this.jwt}`;
+    }
 
-		return headers;
-	}
+    headers = {
+      ...headers,
+      ...originalHeaders,
+    };
 
-	static handleErrorsBasedOnStatus(response) {
-		let promise;
+    return headers;
+  }
 
-		switch (response.status) {
-			case 400:
-				promise = response.json().then((data) => {
-					return Promise.reject();
-				});
-				break;
-			case 422:
-				promise = response.json().then((data) => {
-					return Promise.reject();
-				});
-				break;
-			case 429:
-				promise = Promise.reject();
-				break;
-			case 401:
-			case 403:
-				promise = response.json().then((data) => {
-					return Promise.reject();
-				});
-				break;
-			default:
-				promise = response.json().then((data) => {
-					return Promise.reject();
-				});
-		}
+  static handleErrorsBasedOnStatus(response) {
+    let promise;
 
-		return promise.catch((error) => {
-			return Promise.reject(error);
-		});
-	}
+    switch (response.status) {
+      case 400:
+        promise = response.json().then((data) => {
+          return Promise.reject(data);
+        });
+
+        break;
+      case 422:
+        promise = response.json().then((data) => {
+          return Promise.reject(data);
+        });
+        break;
+      case 429:
+        promise = response.json().then((data) => {
+          return Promise.reject(data);
+        });
+        break;
+      case 401:
+      case 403:
+        promise = response.json().then((data) => {
+          return Promise.reject(data);
+        });
+        break;
+      default:
+        promise = response.json().then((data) => {
+          return Promise.reject(data);
+        });
+    }
+
+    return promise.catch((error) => {
+      return Promise.reject(error);
+    });
+  }
 }
